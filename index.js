@@ -11,7 +11,7 @@ const puppeteer = require('puppeteer');
   await page.goto('https://en.wikipedia.org/wiki/Google');
 
   // Sử dụng phương thức evaluate để truy cập các phần tử của trang web.
-  const name = await page.evaluate(() => document.querySelector('.firstHeading').textContent);
+  const name = await page.evaluate(() => document.querySelector('#siteSub').textContent);
 
   // Đóng trình duyệt.
   await browser.close();
