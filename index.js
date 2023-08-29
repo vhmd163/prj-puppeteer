@@ -1,21 +1,33 @@
-const puppeteer = require('puppeteer');
+import puppeteer from 'puppeteer';
+import dotenv from 'dotenv';
+import startBrowser from './browser.js';
 
-(async () => {
-  // Tạo một đối tượng trình duyệt mới.
-  const browser = await puppeteer.launch();
+dotenv.config(); // Load environment variables from .env file
 
-  // Mở một trang web trong trình duyệt.
-  const page = await browser.newPage();
+const main = async () => {
+  const urls = process.env.PAGE_URLS.split(", ") || [];
+  const browser = await startBrowser();
 
-  // Truy cập trang web Wikipedia về Google.
-  await page.goto('https://en.wikipedia.org/wiki/Google');
+  try {
+    for (const url of urls) {
+      console.log('Start crawling ', url);
+      const page = await browser.newPage();
+      await page.goto(url);
 
-  // Sử dụng phương thức evaluate để truy cập các phần tử của trang web.
-  const name = await page.evaluate(() => document.querySelector('#siteSub').textContent);
+      const companyName = await page.evaluate(() => {
+        const company = document.querySelector('.company_title.directory_profile');
+        return company?.textContent?.trim();
+      });
 
-  // Đóng trình duyệt.
-  await browser.close();
+      console.log('Company name', companyName);
 
-  // In dữ liệu.
-  console.log(name);
-})();
+      await page.close();
+    }
+
+    await browser.close();
+  } catch (error) {
+    console.error('An error occurred:', error);
+  }
+};
+
+main();
