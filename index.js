@@ -11,20 +11,31 @@ const main = async () => {
   try {
     for (const url of urls) {
       console.log('Start crawling ', url);
+      const browser = await startBrowser();
       const page = await browser.newPage();
       await page.goto(url);
 
-      const companyName = await page.evaluate(() => {
-        const company = document.querySelector('.company_title.directory_profile');
-        return company?.textContent?.trim();
-      });
+      await page.waitForSelector('.directory-list')
+      const ulElement = await page.$('.directory-list');
 
-      console.log('Company name', companyName);
+      if (ulElement) {
+        const providerElements = await ulElement.$$('.provider');
 
+        for (const providerElement of providerElements) {
+          const aElement = await providerElement.$('.company_title.directory_profile');
+
+          if (aElement) {
+            const companyName = await aElement.evaluate(element => element.textContent.trim());
+            console.log(companyName);
+          }
+        }
+      } else {
+        console.log('UL element not found');
+      }
+      
       await page.close();
+      await browser.close();
     }
-
-    await browser.close();
   } catch (error) {
     console.error('An error occurred:', error);
   }
