@@ -6,8 +6,6 @@ dotenv.config(); // Load environment variables from .env file
 
 const main = async () => {
   const urls = process.env.PAGE_URLS.split(", ") || [];
-  const browser = await startBrowser();
-
   try {
     for (const url of urls) {
       console.log("Start crawling ", url);
@@ -17,32 +15,35 @@ const main = async () => {
 
       await page.waitForSelector(".directory-list");
       const ulElement = await page.$(".directory-list");
+      const links = [];
 
       if (ulElement) {
         const providerElements = await ulElement.$$(".provider");
 
         for (const providerElement of providerElements) {
-          const aElement = await providerElement.$(
-            ".company_title.directory_profile",
+          const viewProfileElement = await providerElement.$(
+            ".website-profile",
           );
 
-          if (aElement) {
-            const companyName = await aElement.evaluate((element) =>
-              element.textContent.trim(),
-            );
-            console.log(companyName);
+          if (viewProfileElement) {
+            const hrefValue = await viewProfileElement.$eval('a', (a) => a.getAttribute('href'));
+            links.push(process.env.DOMAIN_NAME + hrefValue);
           }
         }
       } else {
         console.log("UL element not found");
       }
 
+      for (const link of links) {
+        //do something
+      }
       await page.close();
       await browser.close();
     }
   } catch (error) {
     console.error("An error occurred:", error);
   }
+  console.log("End the process.")
 };
 
 main();
