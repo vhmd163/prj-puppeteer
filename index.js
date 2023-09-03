@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { startBrowser } from "./controllers/browserController.js";
 import handleCrawlingPage from "./controllers/pageController.js";
+import { exportToExcel, createWorkbook, createWorksheet } from "./exportExcel.helper.js";
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -14,6 +15,10 @@ const main = async () => {
       const page = await browser.newPage();
 
       await handleCrawlingPage(page, url);
+
+      const urlParts = url.split("/");
+      const workSheetName = urlParts[urlParts.length - 1];
+      await createWorksheet(workbook, workSheetName, []);
 
       await browser.close();
     }
