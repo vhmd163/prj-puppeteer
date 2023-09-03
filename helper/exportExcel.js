@@ -8,14 +8,14 @@ export const createWorkbook = () => {
 export const createWorksheet = (workbook, workSheetName, data) => {
     const worksheet = workbook.addWorksheet(workSheetName);
 
-    // const headers = Object.keys(data[0]);
+    const headers = Object.keys(data[0]);
     // worksheet.addRow(data[0]);
 
     data.forEach((item) => {
-        // const row = [];
-        // headers.forEach((header) => {
-        // row.push(item[header]);
-        // });
+        const row = [];
+        headers.forEach((header) => {
+            row.push(item[header]);
+        });
         worksheet.addRow([item]);
     });
 
