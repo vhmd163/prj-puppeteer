@@ -1,6 +1,7 @@
 import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import startBrowser from "./browser.js";
+import exportExcel from "./exportExcel.js";
 
 dotenv.config(); // Load environment variables from .env file
 
@@ -15,7 +16,7 @@ const main = async () => {
 
       await page.waitForSelector(".directory-list");
       const ulElement = await page.$(".directory-list");
-      const links = [];
+      const links = ["Links"];
 
       if (ulElement) {
         const providerElements = await ulElement.$$(".provider");
@@ -34,9 +35,10 @@ const main = async () => {
         console.log("UL element not found");
       }
 
-      for (const link of links) {
-        //do something
-      }
+      await exportExcel(links);
+      // for (const link of links) {
+      //   //do something
+      // }
       await page.close();
       await browser.close();
     }
