@@ -10,7 +10,6 @@ export const startBrowser = async () => {
     !!process?.argv?.find((arg) => arg.startsWith("--mode=")) || false;
 
   try {
-    console.log("Opening the browser......");
     browser = await puppeteer.launch({
       headless: mode,
       args: ["--disable-setuid-sandbox", "--ignore-certificate-errors"],

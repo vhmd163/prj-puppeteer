@@ -3,18 +3,27 @@ import { Page } from "puppeteer";
 /**
  * Handle for crawling data for a company
  * @param {Page} page
+ * @returns {Array} companyData
  */
 const handleCrawlingCompany = async (page) => {
+  const companyData = {};
+
   if (page) {
-    await handleProfileSection(page);
+    companyData.profile = await handleProfileSection(page);
   } else {
     console.log("The Company page instance got some errors !!");
   }
+
+  return companyData;
 };
 
 const handleProfileSection = async (page) => {
   const profileSection = await page.$(".profile_content");
-  await getCompanyLocation(profileSection);
+  const location = await getCompanyLocation(profileSection) || '';
+
+  return {
+    location
+  }
 };
 
 const getCompanyLocation = async (parentEle) => {
@@ -36,8 +45,7 @@ const getCompanyLocation = async (parentEle) => {
     (span) => span.textContent.trim(),
   );
 
-  const formattedAddress = `${streetAddress}\n${addressLocality}, ${addressCountry}`;
-  console.log("formattedAddress", formattedAddress);
+  return `${streetAddress}\n${addressLocality}, ${addressCountry}`;
 };
 
 export default handleCrawlingCompany;

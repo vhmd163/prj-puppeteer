@@ -7,23 +7,23 @@ dotenv.config(); // Load environment variables from .env file
 
 const main = async () => {
   const urls = process.env.PAGE_URLS.split(", ") || [];
-  const workbook = createWorkbook();
+  // const workbook = createWorkbook();
   try {
     for (const url of urls) {
       console.log("Start crawling ", url);
       const browser = await startBrowser();
       const page = await browser.newPage();
 
-      await handleCrawlingPage(page, url);
+      const crawledPageData = await handleCrawlingPage(page, url);
 
       const urlParts = url.split("/");
       const workSheetName = urlParts[urlParts.length - 1];
-      await createWorksheet(workbook, workSheetName, []);
+      await createWorksheet(workbook, workSheetName, crawledPageData);
 
       await browser.close();
     }
 
-    await exportToExcel(workbook, 'data');
+    // await exportToExcel(workbook, 'data');
   } catch (error) {
     console.error("An error occurred:", error);
   }
