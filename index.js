@@ -1,12 +1,12 @@
-import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import startBrowser from "./browser.js";
-import exportExcel from "./exportExcel.js";
+import { exportToExcel, createWorkbook, createWorksheet } from "./exportExcel.helper.js";
 
 dotenv.config(); // Load environment variables from .env file
 
 const main = async () => {
   const urls = process.env.PAGE_URLS.split(", ") || [];
+  const workbook = createWorkbook();
   try {
     for (const url of urls) {
       console.log("Start crawling ", url);
@@ -35,13 +35,17 @@ const main = async () => {
         console.log("UL element not found");
       }
 
-      await exportExcel(links);
+      const urlParts = url.split("/");
+      const workSheetName = urlParts[urlParts.length - 1];
+      await createWorksheet(workbook, workSheetName, links);
       // for (const link of links) {
       //   //do something
       // }
       await page.close();
       await browser.close();
     }
+
+    await exportToExcel(workbook, 'data');
   } catch (error) {
     console.error("An error occurred:", error);
   }
