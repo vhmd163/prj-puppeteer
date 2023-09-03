@@ -7,7 +7,7 @@ import puppeteer, { Browser } from "puppeteer";
 export const startBrowser = async () => {
   let browser;
   const mode =
-    !!process?.argv?.find((arg) => arg.startsWith("--mode=")) || false;
+    process?.argv?.find((arg) => arg.startsWith("--mode=")) ? "new" : false;
 
   try {
     browser = await puppeteer.launch({

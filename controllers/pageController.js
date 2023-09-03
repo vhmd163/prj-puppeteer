@@ -23,26 +23,23 @@ const handleCrawlingPage = async (page, url) => {
         const viewProfileElement = await providerElement.$(
           ".company_logotype.directory_profile",
         );
-        const companyUrl = await (
-          await viewProfileElement.getProperty("href")
-        ).jsonValue();
-
         // To avoid checking if the site connection is secure,
         // We need to open a new brower for each company
-        if (viewProfileElement && companyUrl) {
+        if (viewProfileElement) {
+          const companyUrl = await (
+            await viewProfileElement.getProperty("href")
+          ).jsonValue();
+
           const { page: companyPage, browser: companyBrowser } =
             await openUrlInNewBrowser(companyUrl);
           const companyData = await handleCrawlingCompany(companyPage);
 
-          console.log('companyData', companyData, !!companyData)
-
           if (companyData) {
             pageData.push(companyData);
           }
-
+          await companyPage.close();
           await companyBrowser.close();
         }
-        break;
       }
     } else {
       console.log("UL element not found");

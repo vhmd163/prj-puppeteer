@@ -6,46 +6,35 @@ import { Page } from "puppeteer";
  * @returns {Array} companyData
  */
 const handleCrawlingCompany = async (page) => {
-  const companyData = {};
+  let companyData = [];
 
   if (page) {
-    companyData.profile = await handleProfileSection(page);
+    // Todo: will implement for pagination later
+    const articles = await page.$$('div#reviews-list article') || [];
+
+    for (let i = 0; i < articles.length; i++) {
+      const article = articles[i];
+  
+      const locationData = await page.evaluate(element => {
+        const liElement = element.querySelector('li[data-tooltip-content="<i>Location</i>"]');
+        if (liElement) {
+          const titleElement = liElement.querySelector('.reviewer_list__details-title.sg-text__title');
+          return titleElement ? titleElement.textContent : null;
+        }
+        return null;
+      }, article);
+  
+      if (locationData) {
+        companyData[i] = {
+          location: locationData
+        }
+      }
+    }
   } else {
     console.log("The Company page instance got some errors !!");
   }
 
   return companyData;
-};
-
-const handleProfileSection = async (page) => {
-  const profileSection = await page.$(".profile_content");
-  const location = await getCompanyLocation(profileSection) || '';
-
-  return {
-    location
-  }
-};
-
-const getCompanyLocation = async (parentEle) => {
-  const companyLocaltion = await parentEle.$("#locations_section");
-  const showLocationButton = await companyLocaltion.$("#location_0");
-  await showLocationButton.click();
-
-  const addressElement = await companyLocaltion.$("address.detailed-address");
-  const streetAddress = await addressElement.$eval(
-    'span[itemprop="streetAddress"]',
-    (span) => span.textContent.trim(),
-  );
-  const addressLocality = await addressElement.$eval(
-    'span[itemprop="addressLocality"]',
-    (span) => span.textContent.trim(),
-  );
-  const addressCountry = await addressElement.$eval(
-    'span[itemprop="addressCountry"]',
-    (span) => span.textContent.trim(),
-  );
-
-  return `${streetAddress}\n${addressLocality}, ${addressCountry}`;
 };
 
 export default handleCrawlingCompany;
