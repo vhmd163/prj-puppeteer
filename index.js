@@ -1,4 +1,3 @@
-import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import { startBrowser } from "./controllers/browserController.js";
 import handleCrawlingPage from "./controllers/pageController.js";
@@ -7,6 +6,7 @@ dotenv.config(); // Load environment variables from .env file
 
 const main = async () => {
   const urls = process.env.PAGE_URLS.split(", ") || [];
+  const workbook = createWorkbook();
   try {
     for (const url of urls) {
       console.log("Start crawling ", url);
@@ -17,6 +17,8 @@ const main = async () => {
 
       await browser.close();
     }
+
+    await exportToExcel(workbook, 'data');
   } catch (error) {
     console.error("An error occurred:", error);
   }
