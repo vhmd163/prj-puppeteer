@@ -1,6 +1,10 @@
 import exceljs from "exceljs";
 
-   
+const headerTitles = {
+    clientName: "Client name",
+    location: "Client location",
+}
+
 export const createWorkbook = () => {
     return new exceljs.Workbook();
 };
@@ -8,15 +12,16 @@ export const createWorkbook = () => {
 export const createWorksheet = (workbook, workSheetName, data) => {
     const worksheet = workbook.addWorksheet(workSheetName);
 
-    const headers = Object.keys(data[0]);
-    // worksheet.addRow(data[0]);
+    const columns = Object.keys(data[0]);
+    const headers = columns.map((column) => headerTitles[column]);
+    worksheet.addRow(headers);
 
     data.forEach((item) => {
         const row = [];
-        headers.forEach((header) => {
-            row.push(item[header]);
+        columns.forEach((column) => {
+            row.push(item[column]);
         });
-        worksheet.addRow([item]);
+        worksheet.addRow(row);
     });
 
     return workbook;

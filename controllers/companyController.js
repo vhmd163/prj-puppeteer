@@ -19,8 +19,8 @@ const handleCrawlingCompany = async (page) => {
       const locationData = await getClientLocation(page, article);
 
       companyData[i] = {
+        clientName: clientName,
         location: locationData,
-        clietnName: clientName
       }
     }
   } else {
