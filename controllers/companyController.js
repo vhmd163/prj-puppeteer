@@ -1,5 +1,8 @@
 import { Page } from "puppeteer";
 
+const IMPRESSIONS_QUESTION = 'What did you find most impressive or unique about this company?';
+const IMPROVEMENT_QUESTION = 'Are there any areas for improvement or something they could have done differently?';
+
 /**
  * Handle for crawling data for a company
  * @param {Page} page
@@ -15,25 +18,52 @@ const handleCrawlingCompany = async (page) => {
   const companyData = [];
 
   for (const article of articles) {
-    const clientName = await getClientName(page, article);
-    const locationData = await getClientLocation(page, article);
-    await handleReadFullReviewBtn(page, article);
-    const profileSectionData = await handleReviewProfileSection(article);
+    const articleData = {};
+    // Clients’ name
+    articleData.clientName = await extractClientName(page, article);
+    // Clients’ location
+    articleData.location = await extractClientLocation(page, article);
 
-    companyData.push({
+    // Toggle Read Full Review button before precess the data from the reviews
+    await handleReadFullReviewBtn(page, article);
+
+    const extraSectionContent = await article.$(
+      ".profile-review__extra > section.profile-review__extra-content"
+    );
+  
+    if (extraSectionContent) {
+      const clientIntroduction = await extractClientIntroduction(extraSectionContent);
+
       // Introduce your business and what you do there.
-      clientName: clientName,
-      // Clients’ location
-      location: locationData,
-      // Introduce your business and what you do there.
-      ...profileSectionData,
-    });
+      articleData.introduction =  clientIntroduction.introduction;
+      articleData.whatClientDo = clientIntroduction.whatClientDo;
+
+      // What did you find most impressive or unique about this company?
+      articleData.impressiveness = await extractClientImpressions(extraSectionContent);
+
+      // Are there any areas for improvement or something they could have done differently?
+      articleData.improvement = await extractClientImprovement(extraSectionContent);
+    }
+
+    companyData.push(articleData);
   }
+
+  console.log('companyData', companyData)
 
   return companyData;
 };
 
-const getClientLocation = async (page, article) => {
+const handleReadFullReviewBtn = async (page, article) => {
+  const readFullReviewBtn = await page.evaluate((element) => {
+    return element.querySelector(
+      "button.profile-review__button.profile-review__button--main.review-card-show-more"
+    );
+  }, article);
+
+  readFullReviewBtn?.click?.();
+};
+
+const extractClientLocation = async (page, article) => {
   return await page.evaluate((element) => {
     const liElement = element.querySelector(
       'li[data-tooltip-content="<i>Location</i>"]'
@@ -51,7 +81,7 @@ const getClientLocation = async (page, article) => {
   }, article);
 };
 
-const getClientName = async (page, article) => {
+const extractClientName = async (page, article) => {
   return await page.evaluate((element) => {
     const h4Element = element.querySelector(".profile-review__header > h4");
 
@@ -59,68 +89,52 @@ const getClientName = async (page, article) => {
   }, article);
 };
 
-const handleReadFullReviewBtn = async (page, article) => {
-  const readFullReviewBtn = await page.evaluate((element) => {
-    return element.querySelector(
-      "button.profile-review__button.profile-review__button--main.review-card-show-more"
+const extractClientIntroduction = async (extraSectionContent) => {
+  return await extraSectionContent.$eval('div[data-link-text="Background"]', (ele) => {
+    const paragraphs = Array.from(
+      ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)")
     );
-  }, article);
 
-  readFullReviewBtn?.click?.();
-};
+    let introduction = paragraphs?.[1]?.textContent?.trim?.() || '';
+    let whatClientDo = '';
 
-const handleReviewProfileSection = async (article) => {
-  const extraSectionContent = await article.$(
-    ".profile-review__extra > section.profile-review__extra-content"
-  );
-
-  if (extraSectionContent) {
-    return await extraSectionContent.$eval('div[data-link-text="Background"]',
-      (ele) => {
-        const paragraphs = Array.from(
-          ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)")
-        );
-  
-        let introduction = '';
-        let whatClientDo = '';
-  
-        for (let i = 1; i < paragraphs.length; i += 2) {
-          const paragraph = paragraphs[i];
-          if (paragraph.tagName === 'UL') {
-            const liElements = paragraph.querySelectorAll("li");
-            const content = Array.from(liElements)
-              .filter((li) => !li.textContent.includes(":maker"))
-              .map((liText) => (liText.endsWith(".") ? liText : liText + "."));
-
-            if (content.length > 0) {
-              if (!introduction) {
-                introduction = content.join(" ");
-              } else {
-                whatClientDo = content.join(" ");
-              }
-            }
-          } else {
-            if (!introduction) {
-              introduction = paragraph.textContent.trim();
-            } else {
-              whatClientDo = paragraph.textContent.trim();
-            }
+    if (paragraphs.length > 3) {
+      if (paragraphs[3].tagName === 'UL') {
+        const liElements = paragraphs[3].querySelectorAll("li");
+        const contentArray = Array.from(liElements).map((liElement) => {
+          let liText = liElement.textContent.trim();
+          // Kiểm tra nếu cuối chuỗi không chứa dấu chấm thì thêm vào
+          if (!liText.endsWith(".")) {
+            liText += ".";
           }
-        }
-  
-        return {
-          introduction: introduction,
-          whatClientDo: whatClientDo,
-        };
+          return liText;
+        });
+        whatClientDo = contentArray.join(" ");
+      } else {
+        whatClientDo = paragraphs[3].textContent.trim();
       }
+    }
+  
+    return { introduction, whatClientDo };
+  });
+};
+
+const extractClientImpressions = async (extraSectionContent, question = IMPRESSIONS_QUESTION) => {
+  return await extraSectionContent.$eval('div[data-link-text="Results"]', (ele, question) => {
+    const paragraphs = Array.from(ele.querySelectorAll("p"));
+    const startIdx = paragraphs.findIndex((p) =>
+      p.querySelector("strong")?.textContent?.includes(question)
     );
 
-  }
-
-  return {
-    introduction: '',
-    whatClientDo: '',
-  };
+    if (startIdx !== -1 && startIdx + 1 < paragraphs.length) {
+      return paragraphs[startIdx + 1].textContent.trim();
+    }
+    return "";
+  }, question);
 };
+
+const extractClientImprovement = async (extraSectionContent) => {
+  return await extractClientImpressions(extraSectionContent, IMPROVEMENT_QUESTION);
+}
 
 export default handleCrawlingCompany;
