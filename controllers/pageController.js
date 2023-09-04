@@ -16,14 +16,13 @@ const handleCrawlingPage = async (page, url) => {
     await page.waitForSelector(".directory-list");
     const ulElement = await page.$(".directory-list");
     const urlParts = url.split("/");
-    const workbookName = urlParts[urlParts.length - 1];
-    const workbook = createWorkbook();
+    const pageName = urlParts[urlParts.length - 1];
+    
 
     if (ulElement) {
       const providerElements = await ulElement.$$(".provider");
 
       for (const providerElement of providerElements) {
-
         const viewProfileElement = await providerElement.$(
           ".company_logotype.directory_profile",
         );
@@ -43,14 +42,17 @@ const handleCrawlingPage = async (page, url) => {
           );
 
           if (companyData && companyNameElement) {
+            const workbook = createWorkbook();
             const companyName = await companyNameElement.evaluate(element => element.textContent.trim());
-            await createWorksheet(workbook, companyName ?? 'companyName', companyData);
+            await createWorksheet(workbook, 'data', companyData);
+            await exportToExcel(workbook, companyName, pageName);
           }
           await companyPage.close();
           await companyBrowser.close();
+          
         }
       }
-      await exportToExcel(workbook, workbookName);
+      
     } else {
       console.log("UL element not found");
     }

@@ -10,7 +10,7 @@ export const createWorkbook = () => {
 };
 
 export const createWorksheet = (workbook, workSheetName, data) => {
-    const worksheet = workbook.addWorksheet(workSheetName);
+    const worksheet = workbook.addWorksheet(workSheetName.slice(0, 31));
 
     const columns = Object.keys(data[0]);
     const headers = columns.map((column) => headerTitles[column]);
@@ -27,6 +27,6 @@ export const createWorksheet = (workbook, workSheetName, data) => {
     return workbook;
 };
 
-export const exportToExcel = (workbook, workbookName) => {
-    return workbook.xlsx.writeFile(`data/${workbookName}.xlsx`);
+export const exportToExcel = (workbook, workbookName, folderName) => {
+    return workbook.xlsx.writeFile(`data/${folderName}/${workbookName}.xlsx`);
 }
