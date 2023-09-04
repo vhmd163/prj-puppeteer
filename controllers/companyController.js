@@ -21,9 +21,12 @@ const handleCrawlingCompany = async (page) => {
     const profileSectionData = await handleReviewProfileSection(article);
 
     companyData.push({
+      // Introduce your business and what you do there.
       clientName: clientName,
+      // Clients’ location
       location: locationData,
-      profileSectionData: profileSectionData,
+      // Introduce your business and what you do there.
+      ...profileSectionData,
     });
   }
 
@@ -72,28 +75,52 @@ const handleReviewProfileSection = async (article) => {
   );
 
   if (extraSectionContent) {
-    const clientPosition = await extraSectionContent.$eval(
-      "h5.profile-review__extra-title",
-      (titleElement) => {
+    return await extraSectionContent.$eval('div[data-link-text="Background"]',
+      (ele) => {
         const paragraphs = Array.from(
-          titleElement.parentElement.querySelectorAll("p")
+          ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)")
         );
-        if (paragraphs.length > 1) {
-          const secondParagraph = paragraphs[1].textContent.trim();
-          const cleanedText = secondParagraph.replace(/^I am\s+/i, "");
+  
+        let introduction = '';
+        let whatClientDo = '';
+  
+        for (let i = 1; i < paragraphs.length; i += 2) {
+          const paragraph = paragraphs[i];
+          if (paragraph.tagName === 'UL') {
+            const liElements = paragraph.querySelectorAll("li");
+            const content = Array.from(liElements)
+              .filter((li) => !li.textContent.includes(":maker"))
+              .map((liText) => (liText.endsWith(".") ? liText : liText + "."));
 
-          return cleanedText;
+            if (content.length > 0) {
+              if (!introduction) {
+                introduction = content.join(" ");
+              } else {
+                whatClientDo = content.join(" ");
+              }
+            }
+          } else {
+            if (!introduction) {
+              introduction = paragraph.textContent.trim();
+            } else {
+              whatClientDo = paragraph.textContent.trim();
+            }
+          }
         }
-        return "";
+  
+        return {
+          introduction: introduction,
+          whatClientDo: whatClientDo,
+        };
       }
     );
 
-    return {
-      clientPosition: clientPosition,
-    };
   }
 
-  return null;
+  return {
+    introduction: '',
+    whatClientDo: '',
+  };
 };
 
 export default handleCrawlingCompany;
