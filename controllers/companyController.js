@@ -6,61 +6,94 @@ import { Page } from "puppeteer";
  * @returns {Array} companyData
  */
 const handleCrawlingCompany = async (page) => {
-  let companyData = [];
+  if (!page) {
+    console.log("The Company page instance has some errors!!");
+    return [];
+  }
 
-  if (page) {
-    // Todo: will implement for pagination later
-    const articles = await page.$$('div#reviews-list article') || [];
+  const articles = await page.$$("div#reviews-list article") || [];
+  const companyData = [];
 
-    for (let i = 0; i < articles.length; i++) {
-      const article = articles[i];
+  for (const article of articles) {
+    const clientName = await getClientName(page, article);
+    const locationData = await getClientLocation(page, article);
+    await handleReadFullReviewBtn(page, article);
+    const profileSectionData = await handleReviewProfileSection(article);
 
-      const clientName = await getClientName(page, article);
-      const locationData = await getClientLocation(page, article);
-
-      companyData[i] = {
-        clientName: clientName,
-        location: locationData,
-      }
-    }
-  } else {
-    console.log("The Company page instance got some errors !!");
+    companyData.push({
+      clientName: clientName,
+      location: locationData,
+      profileSectionData: profileSectionData,
+    });
   }
 
   return companyData;
 };
 
-
-/**
- * @param {Page} page
- * @param {ElementHandle<HTMLElement>} article
- * @returns {string} clientLocation
- */
-const getClientLocation =  async (page, article) => {
-   return await page.evaluate(element => {
-    const liElement = element.querySelector('li[data-tooltip-content="<i>Location</i>"]');
+const getClientLocation = async (page, article) => {
+  return await page.evaluate((element) => {
+    const liElement = element.querySelector(
+      'li[data-tooltip-content="<i>Location</i>"]'
+    );
 
     if (liElement) {
-      const titleElement = liElement.querySelector('.reviewer_list__details-title.sg-text__title');
+      const titleElement = liElement.querySelector(
+        ".reviewer_list__details-title.sg-text__title"
+      );
 
-      return titleElement ? titleElement.textContent : '';
+      return titleElement ? titleElement.textContent : "";
     }
 
     return null;
   }, article);
 };
 
-/**
- * @param {Page} page
- * @param {ElementHandle<HTMLElement>} article
- * @returns {string} clientName
- */
 const getClientName = async (page, article) => {
-  return await page.evaluate(element => {
-    const h4Element = element.querySelector('.profile-review__header > h4');
+  return await page.evaluate((element) => {
+    const h4Element = element.querySelector(".profile-review__header > h4");
 
-    return h4Element ? h4Element.textContent : '';
+    return h4Element ? h4Element.textContent : "";
   }, article);
-}
+};
+
+const handleReadFullReviewBtn = async (page, article) => {
+  const readFullReviewBtn = await page.evaluate((element) => {
+    return element.querySelector(
+      "button.profile-review__button.profile-review__button--main.review-card-show-more"
+    );
+  }, article);
+
+  readFullReviewBtn?.click?.();
+};
+
+const handleReviewProfileSection = async (article) => {
+  const extraSectionContent = await article.$(
+    ".profile-review__extra > section.profile-review__extra-content"
+  );
+
+  if (extraSectionContent) {
+    const clientPosition = await extraSectionContent.$eval(
+      "h5.profile-review__extra-title",
+      (titleElement) => {
+        const paragraphs = Array.from(
+          titleElement.parentElement.querySelectorAll("p")
+        );
+        if (paragraphs.length > 1) {
+          const secondParagraph = paragraphs[1].textContent.trim();
+          const cleanedText = secondParagraph.replace(/^I am\s+/i, "");
+
+          return cleanedText;
+        }
+        return "";
+      }
+    );
+
+    return {
+      clientPosition: clientPosition,
+    };
+  }
+
+  return null;
+};
 
 export default handleCrawlingCompany;
