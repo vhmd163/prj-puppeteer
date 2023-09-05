@@ -35,6 +35,7 @@ const handleCrawlingCompany = async (page) => {
     
       if (extraSectionContent) {
         const clientIntroduction = await extractClientIntroduction(extraSectionContent);
+        const clientSelection = await extractClientSolution(extraSectionContent);
   
         // Introduce your business and what you do there.
         articleData.introduction =  clientIntroduction.introduction;
@@ -45,12 +46,18 @@ const handleCrawlingCompany = async (page) => {
   
         // Are there any areas for improvement or something they could have done differently?
         articleData.improvement = await extractClientImprovement(extraSectionContent);
+
+        // How did you select this vendor and what were the deciding factors?
+        articleData.selectionProcess = clientSelection.selectionProcess;
+        articleData.selectionCriteria = clientSelection.selectionCriteria; 
       }
       companyData.push(articleData);
     }
 
     shouldContinue = await handleCheckPaginationReview(page);
-  } while (shouldContinue)
+  } while (shouldContinue);
+
+  console.log('companyData', companyData);
 
   return companyData;
 };
@@ -143,7 +150,7 @@ const extractClientIntroduction = async (extraSectionContent) => {
 
 const extractClientImpressions = async (extraSectionContent, question = IMPRESSIONS_QUESTION) => {
   return await extraSectionContent.$eval('div[data-link-text="Results"]', (ele, question) => {
-    const paragraphs = Array.from(ele.querySelectorAll("p"));
+    const paragraphs = Array.from(ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)"));
     const startIdx = paragraphs.findIndex((p) =>
       p.querySelector("strong")?.textContent?.includes(question)
     );
@@ -157,6 +164,66 @@ const extractClientImpressions = async (extraSectionContent, question = IMPRESSI
 
 const extractClientImprovement = async (extraSectionContent) => {
   return await extractClientImpressions(extraSectionContent, IMPROVEMENT_QUESTION);
-}
+};
+
+const extractClientSolution = async (extraSectionContent) => {
+  const result = {
+    selectionProcess: '',
+    selectionCriteria: '',
+  }
+
+  try {
+    return await extraSectionContent.$eval('div[data-link-text="Solution"]', (ele, result) => {
+      const paragraphs = Array.from(ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)"));
+      const firstQuestion= paragraphs.findIndex((p) =>
+        p.querySelector("strong")?.textContent?.includes('How did you get')
+        || p.querySelector("strong")?.textContent?.includes('How did you come')
+      );
+
+      if (firstQuestion !== -1 && firstQuestion + 1 < paragraphs.length) {
+        if (paragraphs[firstQuestion + 1].tagName === 'UL') {
+          const liElements = paragraphs[firstQuestion + 1].querySelectorAll("li");
+          const contentArray = Array.from(liElements).map((liElement) => {
+            let liText = liElement.textContent.trim();
+            // If there isn't a period at the end of the string, add one.
+            if (!liText.endsWith(".")) {
+              liText += ".";
+            }
+            return liText;
+          });
+          result.selectionProcess = contentArray.join(" ");
+        } else {
+          result.selectionProcess = paragraphs[firstQuestion + 1].textContent.trim();
+        }
+      }
+
+      const secondQuestion= paragraphs.findIndex((p) =>
+        p.querySelector("strong")?.textContent?.includes('Why did you select')
+      );
+
+      if (secondQuestion !== -1 && secondQuestion + 1 < paragraphs.length) {
+        if (paragraphs[secondQuestion + 1].tagName === 'UL') {
+          const liElements = paragraphs[secondQuestion + 1].querySelectorAll("li");
+          const contentArray = Array.from(liElements).map((liElement) => {
+            let liText = liElement.textContent.trim();
+            // If there isn't a period at the end of the string, add one.
+            if (!liText.endsWith(".")) {
+              liText += ".";
+            }
+            return liText;
+          });
+          result.selectionCriteria = contentArray.join(" ");
+        } else {
+          result.selectionCriteria = paragraphs[secondQuestion + 1].textContent.trim();
+        }
+      }
+
+      return result;
+    }, result);
+  } catch (error) {
+    console.error("Not found div[data-link-text='Solution']");
+    return result;
+  }
+};
 
 export default handleCrawlingCompany;

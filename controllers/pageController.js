@@ -27,7 +27,7 @@ const handleCrawlingPage = async (page, url) => {
           '.directory_profile[data-link_text="Profile Button"]',
         );
         // To avoid checking if the site connection is secure,
-        // We need to open a new brower for each company
+        // We need to open a new browser for each company
         if (viewProfileElement) {
           const companyUrl = await (
             await viewProfileElement.getProperty("href")
