@@ -7,6 +7,8 @@ const headerTitles = {
     whatClientDo: "What you do there",
     impressiveness: "What did you find most impressive or unique about this company?",
     improvement: "Are there any areas for improvement or something they could have done differently?",
+    selectionProcess: "How did you select this vendor",
+    selectionCriteria: "what were the deciding factors?",
 }
 
 export const createWorkbook = () => {
@@ -32,5 +34,6 @@ export const createWorksheet = (workbook, workSheetName, data) => {
 };
 
 export const exportToExcel = (workbook, workbookName, folderName) => {
-    return workbook.xlsx.writeFile(`data/${folderName}/${workbookName}.xlsx`);
+    const nameWithoutSpecialChars = workbookName.replace(/[^\w\s]/gi, '');
+    return workbook.xlsx.writeFile(`data/${folderName}/${nameWithoutSpecialChars}.xlsx`);
 }
