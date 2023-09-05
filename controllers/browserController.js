@@ -1,4 +1,7 @@
-import puppeteer, { Browser, executablePath } from "puppeteer";
+import puppeteer, { Browser } from "puppeteer";
+import userAgent from "user-agents";
+import puppeteerExtra from "puppeteer-extra";
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
 /**
  * Handle launch pupperteer in virtual browser
@@ -16,18 +19,19 @@ export const startBrowser = async () => {
       "--no-sandbox",
       "--disable-setuid-sandbox",
       "--ignore-certificate-errors",
-      "--disable-features=site-per-process",
     ],
+    userAgent: 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
     ignoreHTTPSErrors: true,
     // slowMo: 100,
   }
 
   if (browserPath) {
-    puppeteerLaunchOptions.executablePath = browserPath;
+    puppeteerLaunchOptions.executablePath = puppeteer.executablePath();
   }
 
   try {
-    browser = await puppeteer.launch(puppeteerLaunchOptions);
+    puppeteerExtra.use(StealthPlugin());
+    browser = await puppeteerExtra.launch(puppeteerLaunchOptions);
   } catch (err) {
     console.log("Could not create a browser instance => : ", err);
   }
@@ -42,7 +46,7 @@ export const startBrowser = async () => {
 export const openUrlInNewBrowser = async (url) => {
   const browser = await startBrowser();
   const page = await browser.newPage();
-  await page.setCookie({ name: 'your_cookie_name', value: 'your_cookie_value', domain: url });
+  await page.setUserAgent(userAgent.random().toString())
   await page.goto(url);
   return { browser, page };
 };

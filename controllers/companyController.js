@@ -80,8 +80,7 @@ const handleCheckPaginationReview = async (page) => {
     await nextButton.click();
     await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
 
-    // will implement later
-    return false;
+    return true;
   }
 
   return false;
