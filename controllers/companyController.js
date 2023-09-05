@@ -178,6 +178,8 @@ const extractClientSolution = async (extraSectionContent) => {
       const firstQuestion= paragraphs.findIndex((p) =>
         p.querySelector("strong")?.textContent?.includes('How did you get')
         || p.querySelector("strong")?.textContent?.includes('How did you come')
+        || p.querySelector("strong")?.textContent?.includes('How did you find')
+
       );
 
       if (firstQuestion !== -1 && firstQuestion + 1 < paragraphs.length) {
