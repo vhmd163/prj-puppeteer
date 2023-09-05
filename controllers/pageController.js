@@ -5,7 +5,7 @@ import { createWorkbook, exportToExcel, createWorksheet } from "../helper/export
 
 /**
  * Handle crawling data for a page
- * @param {Page} page Pupperteer page instance
+ * @param {Page} page Puppeteer page instance
  * @param {string} url Page url
  * @returns {Array} pageData
  */
@@ -24,7 +24,7 @@ const handleCrawlingPage = async (page, url) => {
 
       for (const providerElement of providerElements) {
         const viewProfileElement = await providerElement.$(
-          ".company_logotype.directory_profile",
+          '.directory_profile[data-link_text="Profile Button"]',
         );
         // To avoid checking if the site connection is secure,
         // We need to open a new brower for each company

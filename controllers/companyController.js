@@ -14,41 +14,43 @@ const handleCrawlingCompany = async (page) => {
     return [];
   }
 
-  const articles = await page.$$("div#reviews-list article") || [];
   const companyData = [];
+  let shouldContinue = false;
 
-  for (const article of articles) {
-    const articleData = {};
-    // Clients’ name
-    articleData.clientName = await extractClientName(page, article);
-    // Clients’ location
-    articleData.location = await extractClientLocation(page, article);
-
-    // Toggle Read Full Review button before precess the data from the reviews
-    await handleReadFullReviewBtn(page, article);
-
-    const extraSectionContent = await article.$(
-      ".profile-review__extra > section.profile-review__extra-content"
-    );
+  do {
+    const articles = await page.$$("div#reviews-list article") || [];
+    for (const article of articles) {
+      const articleData = {};
+      // Clients’ name
+      articleData.clientName = await extractClientName(page, article);
+      // Clients’ location
+      articleData.location = await extractClientLocation(page, article);
   
-    if (extraSectionContent) {
-      const clientIntroduction = await extractClientIntroduction(extraSectionContent);
-
-      // Introduce your business and what you do there.
-      articleData.introduction =  clientIntroduction.introduction;
-      articleData.whatClientDo = clientIntroduction.whatClientDo;
-
-      // What did you find most impressive or unique about this company?
-      articleData.impressiveness = await extractClientImpressions(extraSectionContent);
-
-      // Are there any areas for improvement or something they could have done differently?
-      articleData.improvement = await extractClientImprovement(extraSectionContent);
+      // Toggle Read Full Review button before precess the data from the reviews
+      await handleReadFullReviewBtn(page, article);
+  
+      const extraSectionContent = await article.$(
+        ".profile-review__extra > section.profile-review__extra-content"
+      );
+    
+      if (extraSectionContent) {
+        const clientIntroduction = await extractClientIntroduction(extraSectionContent);
+  
+        // Introduce your business and what you do there.
+        articleData.introduction =  clientIntroduction.introduction;
+        articleData.whatClientDo = clientIntroduction.whatClientDo;
+  
+        // What did you find most impressive or unique about this company?
+        articleData.impressiveness = await extractClientImpressions(extraSectionContent);
+  
+        // Are there any areas for improvement or something they could have done differently?
+        articleData.improvement = await extractClientImprovement(extraSectionContent);
+      }
+      companyData.push(articleData);
     }
 
-    companyData.push(articleData);
-  }
-
-  console.log('companyData', companyData)
+    shouldContinue = await handleCheckPaginationReview(page);
+  } while (shouldContinue)
 
   return companyData;
 };
@@ -61,6 +63,21 @@ const handleReadFullReviewBtn = async (page, article) => {
   }, article);
 
   readFullReviewBtn?.click?.();
+};
+
+const handleCheckPaginationReview = async (page) => {
+  const ulElement = await page.$("nav.profile-reviews--pagination ul.sg-pagination");
+  const nextButton = await ulElement.$('button[data-type="next"]');
+
+  if (!!nextButton) {
+    await nextButton.click();
+    await page.waitForNavigation({ waitUntil: 'domcontentloaded' });
+
+    // will implement later
+    return false;
+  }
+
+  return false;
 };
 
 const extractClientLocation = async (page, article) => {
@@ -90,33 +107,38 @@ const extractClientName = async (page, article) => {
 };
 
 const extractClientIntroduction = async (extraSectionContent) => {
-  return await extraSectionContent.$eval('div[data-link-text="Background"]', (ele) => {
-    const paragraphs = Array.from(
-      ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)")
-    );
+  try {
+    return await extraSectionContent.$eval('div[data-link-text="Background"]', (ele) => {
+      const paragraphs = Array.from(
+        ele.querySelectorAll(":scope > *:not(h5.profile-review__extra-title)")
+      );
 
-    let introduction = paragraphs?.[1]?.textContent?.trim?.() || '';
-    let whatClientDo = '';
+      let introduction = paragraphs?.[1]?.textContent?.trim?.() || '';
+      let whatClientDo = '';
 
-    if (paragraphs.length > 3) {
-      if (paragraphs[3].tagName === 'UL') {
-        const liElements = paragraphs[3].querySelectorAll("li");
-        const contentArray = Array.from(liElements).map((liElement) => {
-          let liText = liElement.textContent.trim();
-          // If there isn't a period at the end of the string, add one.
-          if (!liText.endsWith(".")) {
-            liText += ".";
-          }
-          return liText;
-        });
-        whatClientDo = contentArray.join(" ");
-      } else {
-        whatClientDo = paragraphs[3].textContent.trim();
+      if (paragraphs.length > 3) {
+        if (paragraphs[3].tagName === 'UL') {
+          const liElements = paragraphs[3].querySelectorAll("li");
+          const contentArray = Array.from(liElements).map((liElement) => {
+            let liText = liElement.textContent.trim();
+            // If there isn't a period at the end of the string, add one.
+            if (!liText.endsWith(".")) {
+              liText += ".";
+            }
+            return liText;
+          });
+          whatClientDo = contentArray.join(" ");
+        } else {
+          whatClientDo = paragraphs[3].textContent.trim();
+        }
       }
-    }
-  
-    return { introduction, whatClientDo };
-  });
+
+      return { introduction, whatClientDo };
+    });
+  } catch (error) {
+    console.error("Not found div[data-link-text='Background']");
+    return { introduction: '', whatClientDo: '' };
+  }
 };
 
 const extractClientImpressions = async (extraSectionContent, question = IMPRESSIONS_QUESTION) => {
