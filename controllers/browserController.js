@@ -1,7 +1,7 @@
 import puppeteer, { Browser } from "puppeteer";
 import userAgent from "user-agents";
 import puppeteerExtra from "puppeteer-extra";
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
 /**
  * Handle launch pupperteer in virtual browser
@@ -9,8 +9,9 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
  */
 export const startBrowser = async () => {
   let browser;
-  const mode =
-    process?.argv?.find((arg) => arg?.startsWith("--mode=")) ? "new" : false;
+  const mode = process?.argv?.find((arg) => arg?.startsWith("--mode="))
+    ? "new"
+    : false;
   const browserPath = process.env.BROWSER_EXECUTABLE_PATH;
   const puppeteerLaunchOptions = {
     headless: mode,
@@ -20,10 +21,11 @@ export const startBrowser = async () => {
       "--disable-setuid-sandbox",
       "--ignore-certificate-errors",
     ],
-    userAgent: 'Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148',
+    userAgent:
+      "Mozilla/5.0 (iPad; CPU OS 12_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
     ignoreHTTPSErrors: true,
     // slowMo: 100,
-  }
+  };
 
   if (browserPath) {
     puppeteerLaunchOptions.executablePath = puppeteer.executablePath();
@@ -46,7 +48,7 @@ export const startBrowser = async () => {
 export const openUrlInNewBrowser = async (url) => {
   const browser = await startBrowser();
   const page = await browser.newPage();
-  await page.setUserAgent(userAgent.random().toString())
+  await page.setUserAgent(userAgent.random().toString());
   await page.goto(url);
   return { browser, page };
 };

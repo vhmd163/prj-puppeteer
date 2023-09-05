@@ -2,7 +2,7 @@ import puppeteer from "puppeteer-extra";
 import dotenv from "dotenv";
 import { startBrowser } from "./controllers/browserController.js";
 import handleCrawlingPage from "./controllers/pageController.js";
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
 puppeteer.use(StealthPlugin());
 dotenv.config(); // Load environment variables from .env file
@@ -18,7 +18,6 @@ const main = async () => {
       await handleCrawlingPage(page, url);
       await browser.close();
     }
-
   } catch (error) {
     console.error("An error occurred:", error);
   }
