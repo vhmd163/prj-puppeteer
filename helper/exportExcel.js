@@ -3,6 +3,10 @@ import exceljs from "exceljs";
 const headerTitles = {
     clientName: "Client name",
     location: "Client location",
+    introduction: "Introduce your business",
+    whatClientDo: "What you do there",
+    impressiveness: "What did you find most impressive or unique about this company?",
+    improvement: "Are there any areas for improvement or something they could have done differently?",
 }
 
 export const createWorkbook = () => {

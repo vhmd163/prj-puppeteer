@@ -103,7 +103,7 @@ const extractClientIntroduction = async (extraSectionContent) => {
         const liElements = paragraphs[3].querySelectorAll("li");
         const contentArray = Array.from(liElements).map((liElement) => {
           let liText = liElement.textContent.trim();
-          // Kiểm tra nếu cuối chuỗi không chứa dấu chấm thì thêm vào
+          // If there isn't a period at the end of the string, add one.
           if (!liText.endsWith(".")) {
             liText += ".";
           }
